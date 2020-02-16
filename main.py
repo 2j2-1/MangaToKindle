@@ -5,15 +5,15 @@ import os
 
 opener = urllib.build_opener()
 opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
-url = 'https://www.mangapanda.com'
-manga = ""
+
+manga = "dr-stone"
 
 
 class Manga(object):
     """docstring for Manga"""
+    url = ''
 
-    def __init__(self, url, manga):
-        self.url = url
+    def __init__(self, manga):
         self.manga = manga
         self.mangaURL = "{}/{}".format(self.url, self.manga)
         self.soup = self.getSoup(self.mangaURL)
@@ -23,16 +23,6 @@ class Manga(object):
     def getSoup(self, url):
         response = opener.open(url).read()
         return BeautifulSoup(response, 'html.parser')
-
-    def getLengthOfManga(self):
-        return int(self.soup.find(id="latestchapters").ul.li.a.get('href').split("/")[-1])
-
-    def getLengthOfChapter(self, chapter):
-        soup = self.getSoup("{}/{}".format(self.mangaURL, chapter))
-        return int(soup.find(id="selectpage").find_all('option')[-1].string)
-
-    def getImageLocation(self, soup):
-        return soup.find(id='imgholder').img['src']
 
     def getImage(self, src, filePath, fileName):
         if not os.path.exists(filePath):
@@ -44,20 +34,35 @@ class Manga(object):
         lengthOfChapter = self.getLengthOfChapter(chapter)
         filePath = "{}/{}/".format(self.manga, chapter)
         for image in range(1, lengthOfChapter + 1):
-            soup = self.getSoup(
-                "{}/{}/{}".format(self.mangaURL, chapter, image))
-            imageLocation = self.getImageLocation(soup)
-            self.getImage(imageLocation, filePath, image)
+            imageLocation = self.getImageLocation(chapter, image)
+            print(filePath, image)
+            # self.getImage(imageLocation, filePath, image)
 
     def getManga(self):
-    	self.getChapters(1,self.lengthOfManga)
+        self.getChapters(1, self.lengthOfManga)
 
-    def getChapters(self,start = 1, numOfChapters = 1):
-    	for chapter in range(numOfChapters):
-    		try:
-    			self.getChapter(start+chapter)
-    		except:
-    			print("Chapter {} is unavalible".format(chapter))
+    def getChapters(self, start=1, numOfChapters=1):
+        for chapter in range(numOfChapters):
+            try:
+                self.getChapter(start + chapter)
+            except:
+                print("Chapter {} is unavalible".format(chapter))
 
-manga = Manga(url,manga)
+
+class MangaPanda(Manga):
+    """docstring for MangaPanda"""
+    url = 'https://www.mangapanda.com'
+
+    def getLengthOfManga(self):
+        return int(self.soup.find(id="latestchapters").ul.li.a.get('href').split("/")[-1])
+
+    def getLengthOfChapter(self, chapter):
+        soup = self.getSoup("{}/{}".format(self.mangaURL, chapter))
+        return int(soup.find(id="selectpage").find_all('option')[-1].string)
+
+    def getImageLocation(self, chapter, image):
+        soup = self.getSoup("{}/{}/{}".format(self.mangaURL, chapter, image))
+        return soup.find(id='imgholder').img['src']
+
+manga = MangaPanda(manga)
 manga.getManga()
